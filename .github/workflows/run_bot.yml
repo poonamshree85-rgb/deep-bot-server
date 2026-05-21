@@ -1,0 +1,46 @@
+name: Deep Bot 24/7 Engine
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        required: true
+        type: string
+      temperature:
+        required: true
+        type: string
+      max_tokens:
+        required: true
+        type: string
+
+jobs:
+  run-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Engine
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          
+      - name: Boot Engine & Pull Custom Weights
+        run: |
+          ollama serve &
+          sleep 5
+          ollama pull apoorvrobl/deep-bot-api-v10
+          
+      - name: Calculate Response & Save to File
+        run: |
+          ollama run apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" --options temperature=${{ github.event.inputs.temperature }} num_predict=${{ github.event.inputs.max_tokens }} > response.txt
+
+      - name: Convert to Structured JSON
+        run: |
+          python3 -c "import json; out = open('response.txt').read().strip(); open('response.json', 'w').write(json.dumps({'status': 'done', 'answer': out}))"
+
+      - name: Push Answer Back to Repository
+        run: |
+          git config --global user.name "DeepBot-Runner"
+          git config --global user.email "bot@github.com"
+          git add response.json
+          git commit -m "🚀 Generated latest response model layers" || exit 0
+          git push
