@@ -23,10 +23,10 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           
-      - name: Download & Run Model from Hugging Face
+      - name: Download & Run Stable Model
         run: |
-          # Running the model cleanly without the breaking option flags
-          ollama run hf.co/apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" > response.txt
+          # Using phi3 because it is super fast and lightweight on cloud servers
+          ollama run phi3 "${{ github.event.inputs.prompt }}" > response.txt
 
       - name: Convert to Structured JSON
         run: |
