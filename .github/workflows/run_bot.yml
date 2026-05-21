@@ -23,10 +23,9 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           
-      - name: Boot Engine & Pull Custom Weights
+      - name: Pull Custom Weights
         run: |
-          ollama serve &
-          sleep 5
+          # The install script automatically boots the service, so we just pull the model directly!
           ollama pull apoorvrobl/deep-bot-api-v10
           
       - name: Calculate Response & Save to File
