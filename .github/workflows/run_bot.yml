@@ -23,14 +23,10 @@ jobs:
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
           
-      - name: Pull Custom Weights
+      - name: Download & Run Model from Hugging Face
         run: |
-          # The install script automatically boots the service, so we just pull the model directly!
-          ollama pull apoorvrobl/deep-bot-api-v10
-          
-      - name: Calculate Response & Save to File
-        run: |
-          ollama run apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" --options temperature=${{ github.event.inputs.temperature }} num_predict=${{ github.event.inputs.max_tokens }} > response.txt
+          # Pulls your model straight from your huggingface repo using the raw model path
+          ollama run hf.co/apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" --options temperature=${{ github.event.inputs.temperature }} num_predict=${{ github.event.inputs.max_tokens }} > response.txt
 
       - name: Convert to Structured JSON
         run: |
