@@ -25,8 +25,8 @@ jobs:
           
       - name: Download & Run Model from Hugging Face
         run: |
-          # Pulls your model straight from your huggingface repo using the raw model path
-          ollama run hf.co/apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" --options temperature=${{ github.event.inputs.temperature }} num_predict=${{ github.event.inputs.max_tokens }} > response.txt
+          # Fixed parameter flags to prevent engine execution blocks
+          ollama run hf.co/apoorvrobl/deep-bot-api-v10 "${{ github.event.inputs.prompt }}" --option temperature=${{ github.event.inputs.temperature }} --option num_predict=${{ github.event.inputs.max_tokens }} > response.txt
 
       - name: Convert to Structured JSON
         run: |
