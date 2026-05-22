@@ -22,20 +22,45 @@ jobs:
       - name: Install Engine
         run: |
           curl -fsSL https://ollama.com/install.sh | sh
-          
-      - name: Download & Run Stable Model
-        run: |
-          # Using phi3 because it is super fast and lightweight on cloud servers
-          ollama run phi3 "${{ github.event.inputs.prompt }}" > response.txt
+          # Start Ollama server in background
+          ollama serve &
+          sleep 5
 
-      - name: Convert to Structured JSON
-        run: |
-          python3 -c "import json; out = open('response.txt').read().strip(); open('response.json', 'w').write(json.dumps({'status': 'done', 'answer': out}))"
-
-      - name: Push Answer Back to Repository
+      - name: Continuous Chat Loop (10 Minutes Keep-Alive)
         run: |
           git config --global user.name "DeepBot-Runner"
           git config --global user.email "bot@github.com"
+
+          # 1. Clear any old prompt flags and process the first user message
+          rm -f new_prompt.txt
+          echo "🤖 Processing primary prompt..."
+          ollama run phi3 "${{ github.event.inputs.prompt }}" > response.txt
+          python3 -c "import json; out = open('response.txt').read().strip(); open('response.json', 'w').write(json.dumps({'status': 'done', 'answer': out}))"
           git add response.json
-          git commit -m "🚀 Generated latest response model layers" || exit 0
+          git commit -m "🚀 Generated primary response" || exit 0
           git push
+
+          # 2. Stay alive and check for follow-up text packets for 10 minutes (120 cycles * 5s)
+          echo "⏳ Entering 10-minute interactive loop..."
+          for i in {1..120}; do
+            sleep 5
+            git pull --rebase origin main || continue
+            
+            # Watch for a tracking file pushed from your phone app interface
+            if [ -f "new_prompt.txt" ]; then
+              NEXT_PROMPT=$(cat new_prompt.txt)
+              echo "🎯 New instant prompt detected: $NEXT_PROMPT"
+              
+              # Run immediately using the model currently resting in system RAM
+              ollama run phi3 "$NEXT_PROMPT" > response.txt
+              python3 -c "import json; out = open('response.txt').read().strip(); open('response.json', 'w').write(json.dumps({'status': 'done', 'answer': out}))"
+              
+              # Erase the prompt flag so it doesn't double-process
+              rm -f new_prompt.txt
+              
+              git add response.json new_prompt.txt
+              git commit -m "⚡ Instant response generated" || exit 0
+              git push
+            fi
+          done
+          echo "⏰ 10 minutes finished. Shutting down container engine."
